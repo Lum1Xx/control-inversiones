@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Inversiones en Pesos (ARS)</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dark-mode">
+    <div class="container">
+        <header>
+            <h1>Dashboard de Inversiones en Pesos (ARS)</h1>
+            <div class="header-actions">
+                <a href="index.html" class="btn-secondary currency-switch">
+                    <i class="fas fa-exchange-alt"></i> Cambiar a USD
+                </a>
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch" for="checkbox">
+                        <input type="checkbox" id="checkbox">
+                        <div class="slider round"></div>
+                    </label>
+                    <span class="theme-text">Modo oscuro</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- El resto del HTML es idéntico al original -->
+        <section class="dashboard">
+            <div class="card">
+                <h3>Capital Total</h3>
+                <div class="value editable" id="total-capital">$1,000,000.00</div>
+            </div>
+            <div class="card">
+                <h3>Capital Invertido</h3>
+                <div class="value" id="invested-capital">$0.00</div>
+            </div>
+            <div class="card">
+                <h3>Rendimiento Mensual</h3>
+                <div class="value" id="monthly-return">0%</div>
+            </div>
+            <div class="card">
+                <h3>Rendimiento Total</h3>
+                <div class="value" id="total-return">$0.00</div>
+            </div>
+            <div class="card">
+                <h3>Operaciones Abiertas</h3>
+                <div class="value" id="open-trades">0</div>
+            </div>
+            <div class="card">
+                <h3>Operaciones Cerradas</h3>
+                <div class="value" id="closed-trades">0</div>
+            </div>
+        </section>
+
+        <section class="chart-container">
+            <canvas id="performance-chart"></canvas>
+        </section>
+
+        <section class="tabs">
+            <button class="tab-button active" data-tab="operations">Operaciones</button>
+            <button class="tab-button" data-tab="journal">Diario de Inversión</button>
+        </section>
+
+        <section id="operations" class="tab-content active">
+            <div class="operations-controls">
+                <button id="add-operation-btn" class="btn-primary">
+                    <i class="fas fa-plus"></i> Agregar Operación
+                </button>
+                <div class="filters">
+                    <select id="asset-filter">
+                        <option value="">Todos los activos</option>
+                    </select>
+                    <select id="platform-filter">
+                        <option value="">Todas las plataformas</option>
+                    </select>
+                    <select id="status-filter">
+                        <option value="">Todos los estados</option>
+                        <option value="Abierta">Abierta</option>
+                        <option value="Cerrada">Cerrada</option>
+                    </select>
+                </div>
+                <div class="import-export">
+                    <button id="export-btn" class="btn-secondary">
+                        <i class="fas fa-file-export"></i> Exportar
+                    </button>
+                    <button id="import-btn" class="btn-secondary">
+                        <i class="fas fa-file-import"></i> Importar
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <div class="modal" id="operation-modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2 id="modal-title">Nueva Operación</h2>
+                    <form id="operation-form">
+                        <input type="hidden" id="operation-id">
+                        <div class="form-group">
+                            <label for="asset">Activo</label>
+                            <input type="text" id="asset" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="platform">Plataforma</label>
+                            <input type="text" id="platform" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Monto Invertido ($)</label>
+                            <input type="number" id="amount" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="entry-price">Precio de Entrada</label>
+                            <input type="number" id="entry-price" step="0.000001" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="entry-date">Fecha de Entrada</label>
+                            <input type="date" id="entry-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="current-price">Precio Actual</label>
+                            <input type="number" id="current-price" step="0.000001">
+                        </div>
+                        <div class="form-group">
+                            <label for="exit-price">Precio de Salida</label>
+                            <input type="number" id="exit-price" step="0.000001">
+                        </div>
+                        <div class="form-group">
+                            <label for="exit-date">Fecha de Salida</label>
+                            <input type="date" id="exit-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Estado</label>
+                            <select id="status">
+                                <option value="Abierta">Abierta</option>
+                                <option value="Cerrada">Cerrada</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="operations-table">
+                    <thead>
+                        <tr>
+                            <th>Activo</th>
+                            <th>Plataforma</th>
+                            <th>Monto</th>
+                            <th>Precio Entrada</th>
+                            <th>Fecha Entrada</th>
+                            <th>Precio Actual</th>
+                            <th>Precio Salida</th>
+                            <th>Fecha Salida</th>
+                            <th>Estado</th>
+                            <th>Rendimiento</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="journal" class="tab-content">
+            <div class="journal-controls">
+                <button id="add-journal-btn" class="btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Entrada
+                </button>
+            </div>
+
+            <div class="modal" id="journal-modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2 id="journal-modal-title">Nueva Entrada en el Diario</h2>
+                    <form id="journal-form">
+                        <input type="hidden" id="journal-id">
+                        <div class="form-group">
+                            <label for="journal-date">Fecha</label>
+                            <input type="date" id="journal-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="journal-asset">Activo</label>
+                            <input type="text" id="journal-asset" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="journal-reason">Motivo de Entrada</label>
+                            <textarea id="journal-reason" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="journal-result">Resultado</label>
+                            <select id="journal-result">
+                                <option value="Ganancia">Ganancia</option>
+                                <option value="Pérdida">Pérdida</option>
+                                <option value="Neutral">Neutral</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="journal-reflection">Reflexión o Aprendizaje</label>
+                            <textarea id="journal-reflection" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="journal-emotion">Estado Emocional</label>
+                            <select id="journal-emotion">
+                                <option value="Confianza">Confianza</option>
+                                <option value="Miedo">Miedo</option>
+                                <option value="Codicia">Codicia</option>
+                                <option value="Paciencia">Paciencia</option>
+                                <option value="Frustración">Frustración</option>
+                                <option value="Euforia">Euforia</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="journal-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Activo</th>
+                            <th>Motivo Entrada</th>
+                            <th>Resultado</th>
+                            <th>Reflexión</th>
+                            <th>Emoción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="ars-script.js"></script>
+</body>
+</html>
